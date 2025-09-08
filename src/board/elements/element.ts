@@ -1,8 +1,21 @@
-import type { Box, Point, resizeDirection, ShapeProps } from "../types";
+import { v4 as uuidv4 } from "uuid";
+import type Board from "../board";
+import type { Box, elementEvent, halign, Point, resizeDirection, ShapeProps, valign } from "../types";
 import { resizeRect } from "../utils/reactResize";
+
+export type drawProps = {
+   isActive?: boolean;
+}
+
+type EventCallbackProps = {
+   e: Point
+}
+
+type eventCallback = (_: EventCallbackProps) => void;
 
 class ShapeObject implements ShapeProps {
    declare element: HTMLElement;
+   padding: number = 6;
    id: string;
    height: number;
    left: number;
@@ -10,25 +23,101 @@ class ShapeObject implements ShapeProps {
    width: number;
    stroke: string;
    fill: string;
+   text: string;
+   halign: halign;
+   valign: valign;
+   private events: Map<elementEvent, eventCallback[]>
+   _board: Board;
+
+   draw(props?: drawProps): HTMLElement {
+      return this.Element();
+   }
 
    constructor(props: ShapeProps) {
-      this.id = "";
+      this.id = uuidv4();
       this.height = props.height || 100;
       this.width = props.width || 100;
       this.left = props.left || 0;
       this.top = props.top || 0;
       this.stroke = props.stroke || "#202020";
       this.fill = props.fill || "transparent"
+      this.text = props.text || "";
+      this.halign = props.halign || "center";
+      this.valign = props.valign || "center";
+      this.events = new Map();
+      this._board = props._board;
    }
 
-   private pointerdown(e: PointerEvent | MouseEvent) {
+   mousedown(e: EventCallbackProps) {
+      const subs = this.events.get("mousedown")
+      if (subs) {
+         subs.forEach((s) => {
+            s(e)
+         })
+      }
    }
 
-   private pointermove(e: PointerEvent | MouseEvent) {
-
+   clean() {
+      const child = this.element.children
+      for (let i = 0; i < child.length; i++) {
+         child.item(i)?.remove();
+      }
+      this.element.remove();
    }
 
-   private pointerup(e: PointerEvent | MouseEvent) {
+   mouseover(e: EventCallbackProps) {
+      const subs = this.events.get("mouseover")
+      if (subs) {
+         subs.forEach((s) => {
+            s(e)
+         })
+      }
+      if (this._board.activeShape?.ID() === this.ID()) {
+         const r = resizeRect(
+            e.e,
+            {
+               x1: this.left,
+               x2: this.left + this.width,
+               y1: this.top,
+               y2: this.top + this.height
+            },
+            6
+         )
+         if (r) {
+            switch (r.rd) {
+               case "tl":
+               case "br":
+                  document.body.style.cursor = "nwse-resize";
+                  break;
+
+               case "tr":
+               case "bl":
+                  document.body.style.cursor = "nesw-resize";
+                  break;
+
+               case "t":
+               case "b":
+                  document.body.style.cursor = "ns-resize";
+                  break;
+
+               case "l":
+               case "r":
+                  document.body.style.cursor = "ew-resize";
+                  break;
+            }
+         }
+      } else {
+         document.body.style.cursor = "default";
+      }
+   }
+
+   mousedup(e: EventCallbackProps) {
+      const subs = this.events.get("mouseup")
+      if (subs) {
+         subs.forEach((s) => {
+            s(e)
+         })
+      }
    }
 
    Element() {
@@ -38,8 +127,6 @@ class ShapeObject implements ShapeProps {
    ID(): string {
       return this.id;
    }
-
-   mousemove() { }
 
    Dragging(prev: Point, current: Point): void {
       const dx = current.x - prev.x;
@@ -58,8 +145,13 @@ class ShapeObject implements ShapeProps {
    IsResizable(p: Point): resizeDirection | null {
       const d = resizeRect(
          p,
-         { x1: this.left, x2: this.left + this.width, y1: this.top, y2: this.top + this.height },
-         20
+         {
+            x1: this.left,
+            x2: this.left + this.width,
+            y1: this.top,
+            y2: this.top + this.height
+         },
+         this.padding
       )
       if (!d) {
          return null;

@@ -1,9 +1,13 @@
+import type Board from "./board";
+
 export type Box = {
    x1: number;
    x2: number;
    y1: number;
    y2: number;
 }
+
+export type elementEvent = "mousedown" | "mouseover" | "mouseup";
 
 export type resizeDirection = "l" | "b" | "t" | "r" | "tl" | "bl" | "br" | "tr"
 
@@ -26,7 +30,12 @@ export type Point = {
    y: number;
 }
 
+export type valign = "top" | "center" | "bottom";
+export type halign = "left" | "center" | "right";
+
 export type ShapeProps = {
+   padding?: number
+   _board: Board;
    element?: HTMLElement;
    id?: string;
    left?: number;
@@ -36,4 +45,6 @@ export type ShapeProps = {
    stroke?: string;
    fill?: string;
    text?: string;
+   valign?: valign;
+   halign?: halign;
 }

@@ -2,4 +2,22 @@
    padding: 0;
    margin: 0;
    box-sizing: border-box; 
+   font-family: system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+.element {
+   position: absolute;
+   touch-action: none;
+   width: fit-content;
+   pointer-events: none;
+   padding: 2px;;
+   /* text-wrap: nowrap; */
+}
+
+.page {
+   border-radius: 10px;
+   box-shadow: 0px 0px 20px #22222250;
+   border: 1px solid #20202010;
+   overflow: hidden;
+   position: relative;
 }

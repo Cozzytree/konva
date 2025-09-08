@@ -1,3 +1,4 @@
+import type Board from "./board";
 import type ShapeObject from "./elements/element";
 import Header from "./elements/header";
 import Store from "./store";
@@ -6,9 +7,11 @@ import type { Box, Point, resizeDirection } from "./types";
 type Props = {
    width: number;
    height: number;
+   board: Board
 };
 
 class Page {
+   private _board: Board;
    private lastPoint: Point = { x: 0, y: 0 };
    declare width: number;
    declare contentContainer: HTMLDivElement;
@@ -24,26 +27,45 @@ class Page {
 
    constructor(props: Props) {
       this.elements = new Store();
+      this._board = props.board;
       this.width = props.width;
       this.height = props.height;
       this.contentContainer = document.createElement("div");
       this.contentContainer.setAttribute("data-page", Date.now().toString());
-      this.contentContainer.style.position = "relative";
       this.contentContainer.style.width = `${this.width}px`;
       this.contentContainer.style.height = `${this.height}px`;
-      this.contentContainer.style.border = `1px solid #222222`;
-      this.contentContainer.style.overflow = "hidden";
+      this.contentContainer.classList.add("page")
 
       this.handlemousedown = this.onmousedown.bind(this);
       this.handlemousemove = this.onmousemove.bind(this);
       this.handlemouseup = this.onmouseup.bind(this);
 
-      this.insert(new Header())
+      this.insert(
+         new Header({
+            _board: this._board,
+            left: 0,
+            top: 0,
+            text: "Hello world\nIm here all i do i stay!!\nHello world this is a game"
+         }),
+         new Header({
+            _board: this._board,
+            left: 0,
+            top: 0,
+         }),
+         new Header({
+            _board: this._board,
+            text: "Hello Seattle",
+            left: 100,
+            top: 100,
+            width: 100,
+            height: 100
+         })
+      )
    }
 
    init() {
       this.contentContainer.addEventListener("pointerdown", this.handlemousedown);
-      this.contentContainer.addEventListener("pointermove", this.handlemousemove)
+      document.addEventListener("pointermove", this.handlemousemove)
       this.contentContainer.addEventListener("pointerup", this.handlemouseup);
    }
 
@@ -58,7 +80,7 @@ class Page {
          return null;
       }
 
-      return { x: e.clientX - box.left, y: e.clientY - box.top };
+      return { x: (e.clientX - box.left) / this._board.view.scl, y: (e.clientY - box.top) / this._board.view.scl };
    }
 
    onmousedown(e: MouseEvent | PointerEvent) {
@@ -67,12 +89,29 @@ class Page {
       }
       const point = this.getTransformedCoords(e);
       if (point == null) return;
+      this.lastPoint = point;
 
+      if (this._board.activeShape) {
+         
+         const r = this._board.activeShape.IsResizable(point)
+         if (r) {
+            this.resizeElement = {
+               d: r,
+               e: this._board.activeShape,
+               old: {
+                  x1: this._board.activeShape.left,
+                  x2: this._board.activeShape.left + this._board.activeShape.width,
+                  y1: this._board.activeShape.top,
+                  y2: this._board.activeShape.top + this._board.activeShape.height,
+               } 
+            }
+            return
+         }
+      }
 
       const getLastInserted = this.elements.getLastInserted;
       if (getLastInserted) {
          const resize = getLastInserted.IsResizable(point);
-         console.log(resize);
          if (resize) {
             this.resizeElement = {
                d: resize, e: getLastInserted, old: {
@@ -82,7 +121,17 @@ class Page {
                   y2: getLastInserted.top + getLastInserted.height
                }
             }
+            getLastInserted.mousedown({ e: point })
+            this._board.activeShape = getLastInserted;
             return;
+         }
+
+         const d = getLastInserted.IsDraggable(point);
+         if (d) {
+            this.draggedElement = getLastInserted;
+            this._board.activeShape = getLastInserted;
+            getLastInserted.mousedown({ e: point })
+            return
          }
       }
 
@@ -96,9 +145,9 @@ class Page {
       })
 
       if (element) {
+         this._board.activeShape = element;
          this.draggedElement = element;
       }
-      console.log(element);
    }
 
    onmousemove(e: MouseEvent | PointerEvent) {
@@ -113,23 +162,39 @@ class Page {
 
       if (this.resizeElement) {
          this.resizeElement.e.Resizing(point, this.resizeElement.old, this.resizeElement.d)
+         return;
       }
+
+      this.elements.forEach((el) => {
+         if (el.IsDraggable(point)) {
+            el.mouseover({ e: point });
+         }
+      })
    }
 
    onmouseup(e: PointerEvent | MouseEvent) {
+      const point = this.getTransformedCoords(e)
+      if (!point) return;
+      if (this.draggedElement) {
+         this.draggedElement.mousedup({ e: point })
+      }
+      console.log(this._board.activeShape);
       this.draggedElement = null;
       this.resizeElement = null;
    }
 
    insert(...values: ShapeObject[]) {
       this.elements.insert(values, (v) => {
-         this.contentContainer.append(v.Element());
+         this.contentContainer.append(v.draw());
       });
    }
 
    clean() {
       this.contentContainer.removeEventListener("pointerdown", this.handlemousedown);
-      this.contentContainer.removeEventListener("pointermove", this.handlemousemove);
+      document.removeEventListener("pointermove", this.handlemousemove);
+      this.elements.forEach((e) => {
+         e.clean();
+      })
       this.contentContainer.remove();
    }
 }
