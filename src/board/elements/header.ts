@@ -3,13 +3,13 @@ import ShapeObject, { type drawProps } from "./element";
 
 class Header extends ShapeObject {
    constructor(props: ShapeProps) {
-      super(props || {})
+      super(props || {});
       this.element = document.createElement("div");
       this.element.style.position = "absolute";
       this.element.style.left = `${this.left}px`;
       this.element.style.top = `${this.top}px`;
       this.element.style.width = `${this.width}px`;
-      this.element.style.height = `${this.height}px`
+      this.element.style.height = `${this.height}px`;
       this.element.style.border = `1px solid ${this.stroke}`;
       this.element.classList.add("element");
    }
@@ -26,7 +26,6 @@ class Header extends ShapeObject {
          // Defer measurement until layout is ready
          requestAnimationFrame(() => {
             const minHeight = t.scrollHeight;
-            console.log("Measured height:", minHeight);
             this.height = Math.max(minHeight, this.height);
 
             this.element.style.height = `${this.height}px`;
@@ -34,13 +33,12 @@ class Header extends ShapeObject {
             this.element.style.justifyContent = "center";
             this.element.style.alignItems = "center";
          });
-
       }
       return this.Element();
    }
 
    IsResizable(p: Point): resizeDirection | null {
-      return super.IsResizable(p)
+      return super.IsResizable(p);
    }
 
    Resizing(current: Point, old: Box, d: resizeDirection): void {
@@ -48,7 +46,12 @@ class Header extends ShapeObject {
    }
 
    IsDraggable(p: Point): boolean {
-      return (p.x > this.left && p.x < this.left + this.width && p.y > this.top && p.y < this.top + this.height);
+      return (
+         p.x > this.left &&
+         p.x < this.left + this.width &&
+         p.y > this.top &&
+         p.y < this.top + this.height
+      );
    }
 
    Dragging(prev: Point, current: Point): void {

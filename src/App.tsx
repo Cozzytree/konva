@@ -17,7 +17,7 @@ function App() {
       };
    }, []);
    return (
-      <div style={{}}>
+      <div style={{ padding: "10px", marginTop: "100px" }}>
          <div style={{ padding: "20px" }} ref={divRef}></div>
       </div>
    );

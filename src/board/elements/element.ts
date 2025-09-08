@@ -1,15 +1,23 @@
 import { v4 as uuidv4 } from "uuid";
 import type Board from "../board";
-import type { Box, elementEvent, halign, Point, resizeDirection, ShapeProps, valign } from "../types";
+import type {
+   Box,
+   elementEvent,
+   halign,
+   Point,
+   resizeDirection,
+   ShapeProps,
+   valign,
+} from "../types";
 import { resizeRect } from "../utils/reactResize";
 
 export type drawProps = {
    isActive?: boolean;
-}
+};
 
 type EventCallbackProps = {
-   e: Point
-}
+   e: Point;
+};
 
 type eventCallback = (_: EventCallbackProps) => void;
 
@@ -26,7 +34,7 @@ class ShapeObject implements ShapeProps {
    text: string;
    halign: halign;
    valign: valign;
-   private events: Map<elementEvent, eventCallback[]>
+   private events: Map<elementEvent, eventCallback[]>;
    _board: Board;
 
    draw(props?: drawProps): HTMLElement {
@@ -40,7 +48,7 @@ class ShapeObject implements ShapeProps {
       this.left = props.left || 0;
       this.top = props.top || 0;
       this.stroke = props.stroke || "#202020";
-      this.fill = props.fill || "transparent"
+      this.fill = props.fill || "transparent";
       this.text = props.text || "";
       this.halign = props.halign || "center";
       this.valign = props.valign || "center";
@@ -49,16 +57,16 @@ class ShapeObject implements ShapeProps {
    }
 
    mousedown(e: EventCallbackProps) {
-      const subs = this.events.get("mousedown")
+      const subs = this.events.get("mousedown");
       if (subs) {
          subs.forEach((s) => {
-            s(e)
-         })
+            s(e);
+         });
       }
    }
 
    clean() {
-      const child = this.element.children
+      const child = this.element.children;
       for (let i = 0; i < child.length; i++) {
          child.item(i)?.remove();
       }
@@ -66,23 +74,23 @@ class ShapeObject implements ShapeProps {
    }
 
    mouseover(e: EventCallbackProps) {
-      const subs = this.events.get("mouseover")
+      const subs = this.events.get("mouseover");
       if (subs) {
          subs.forEach((s) => {
-            s(e)
-         })
+            s(e);
+         });
       }
-      if (this._board.activeShape?.ID() === this.ID()) {
+      if (this._board.getActiveShape?.ID() === this.ID()) {
          const r = resizeRect(
             e.e,
             {
                x1: this.left,
                x2: this.left + this.width,
                y1: this.top,
-               y2: this.top + this.height
+               y2: this.top + this.height,
             },
-            6
-         )
+            6,
+         );
          if (r) {
             switch (r.rd) {
                case "tl":
@@ -112,11 +120,11 @@ class ShapeObject implements ShapeProps {
    }
 
    mousedup(e: EventCallbackProps) {
-      const subs = this.events.get("mouseup")
+      const subs = this.events.get("mouseup");
       if (subs) {
          subs.forEach((s) => {
-            s(e)
-         })
+            s(e);
+         });
       }
    }
 
@@ -130,7 +138,7 @@ class ShapeObject implements ShapeProps {
 
    Dragging(prev: Point, current: Point): void {
       const dx = current.x - prev.x;
-      const dy = current.y - prev.y
+      const dy = current.y - prev.y;
 
       this.left += dx;
       this.top += dy;
@@ -149,10 +157,10 @@ class ShapeObject implements ShapeProps {
             x1: this.left,
             x2: this.left + this.width,
             y1: this.top,
-            y2: this.top + this.height
+            y2: this.top + this.height,
          },
-         this.padding
-      )
+         this.padding,
+      );
       if (!d) {
          return null;
       }
@@ -162,6 +170,42 @@ class ShapeObject implements ShapeProps {
 
    Resizing(current: Point, old: Box, d: resizeDirection): void {
       switch (d) {
+         case "l":
+            if (current.x > old.x2) {
+               this.left = old.x2;
+               this.width = current.x - old.x2;
+            } else {
+               this.left = current.x;
+               this.width = old.x2 - current.x;
+            }
+            break;
+         case "r":
+            if (current.x > old.x1) {
+               this.left = old.x1;
+               this.width = current.x - old.x1;
+            } else {
+               this.left = current.x;
+               this.width = old.x1 - current.x;
+            }
+            break;
+         case "b":
+            if (current.y > old.y1) {
+               this.top = old.y1;
+               this.height = current.y - old.y1;
+            } else {
+               this.top = current.y;
+               this.height = old.y1 - current.y;
+            }
+            break;
+         case "t":
+            if (current.y > old.y2) {
+               this.top = old.y2;
+               this.height = current.y - old.y2;
+            } else {
+               this.top = current.y;
+               this.height = old.y2 - current.y;
+            }
+            break;
          case "tl":
             if (current.x > old.x2) {
                this.left = old.x2;
