@@ -5,6 +5,7 @@ import Header from "./elements/header";
 import Store from "./store";
 import type { Box, Point, resizeDirection } from "./types";
 import UI from "./ui";
+import Text from "./elements/text";
 
 type Props = {
    width: number;
@@ -83,6 +84,8 @@ class Page {
             _board: this._board,
             left: 0,
             top: 0,
+            strokeWidth: 0,
+            text: "Hello world",
          }),
          new Header({
             _board: this._board,
@@ -91,6 +94,12 @@ class Page {
             top: 100,
             width: 100,
             height: 100,
+         }),
+         new Text({
+            _board: this._board,
+            left: 100,
+            top: 150,
+            text: "Heading",
          }),
       );
    }
@@ -102,24 +111,43 @@ class Page {
          updater: () => {
             btn.html(this.getLockHtml()); // recompute every update
          },
-      }).on("mousedown", () => {
+      }).on("click", () => {
          this.setLocked = !this.locked;
          this._board.setFocusedPage = this.locked ? null : this;
          btn.update(); // re-render with new value
       });
 
+      const titleDiv = new UI({
+         tag: "div",
+      }).append(
+         new UI({
+            tag: "h2",
+            className: "k-title",
+         })
+            .setText(this.title)
+            .on("click", ({ e, ui }) => {
+               ui.el.contentEditable = "true";
+            })
+            .on("blur", ({ ui }) => {
+               this.title = ui.el.innerText;
+               ui.el.contentEditable = "false";
+            }),
+      );
+
       return new UI({
          tag: "div",
          styles: {
             display: "flex",
-            justifyContent: "end",
+            justifyContent: "space-between",
             alignItems: "center",
             width: "100%",
             position: "absolute",
             top: "-5%",
             padding: "2px 4px",
          },
-      }).append(btn);
+      })
+         .append(titleDiv)
+         .append(btn);
    }
 
    private getLockHtml() {
@@ -143,7 +171,7 @@ class Page {
    }
 
    getTransformedCoords(e: MouseEvent | PointerEvent) {
-      const box = this.pageContainer.getParent.getBoundingClientRect();
+      const box = this.pageContainer.el.getBoundingClientRect();
       // if (
       //    e.clientX < box.left ||
       //    e.clientX > box.right ||
@@ -167,7 +195,7 @@ class Page {
       this.lastPoint = point;
 
       // check is active shape is resizable or draggable
-      const ac = this._board.getActiveShape;
+      const ac = this._board.getActiveShape.shape;
       if (ac) {
          const r = ac.IsResizable(point);
          if (r) {
@@ -231,6 +259,10 @@ class Page {
          this._board.setActiveShape = element;
          this.draggedElement = element;
       }
+
+      if (!this.draggedElement && !this.resizeElement) {
+         this._board.setActiveShape = null;
+      }
    }
 
    onmousemove(e: MouseEvent | PointerEvent) {
@@ -239,6 +271,7 @@ class Page {
       if (this.draggedElement) {
          this.draggedElement.Dragging(this.lastPoint, point);
          this.lastPoint = point;
+         document.body.style.cursor = "grab";
          return;
       }
 
@@ -262,15 +295,21 @@ class Page {
    onmouseup(e: PointerEvent | MouseEvent) {
       const point = this.getTransformedCoords(e);
       if (this.draggedElement) {
-         this.draggedElement.mousedup({ e: point });
+         this.draggedElement.mouseup({ e: point });
       }
+
+      if (this.resizeElement) {
+         this.resizeElement.e.mouseup({ e: point });
+      }
+
+      document.body.style.cursor = "default";
       this.draggedElement = null;
       this.resizeElement = null;
    }
 
    insert(...values: ShapeObject[]) {
       this.elements.insert(values, (v) => {
-         this.pageContainer.parent.append(v.draw());
+         this.pageContainer.append(v.draw());
          // this.contentContainer.append(v.draw());
       });
    }

@@ -1,15 +1,16 @@
 import type Board from "./board";
+import type UI from "./ui";
 
 export type Box = {
    x1: number;
    x2: number;
    y1: number;
    y2: number;
-}
+};
 
 export type elementEvent = "mousedown" | "mouseover" | "mouseup";
 
-export type resizeDirection = "l" | "b" | "t" | "r" | "tl" | "bl" | "br" | "tr"
+export type resizeDirection = "l" | "b" | "t" | "r" | "tl" | "bl" | "br" | "tr";
 
 export interface ElementInterface {
    ID(): string;
@@ -28,15 +29,18 @@ export interface ElementInterface {
 export type Point = {
    x: number;
    y: number;
-}
+};
 
 export type valign = "top" | "center" | "bottom";
 export type halign = "left" | "center" | "right";
 
 export type ShapeProps = {
-   padding?: number
+   fontSize?: number;
+   color?: string;
+   strokeWidth?: number;
+   padding?: number;
    _board: Board;
-   element?: HTMLElement;
+   element?: UI;
    id?: string;
    left?: number;
    top?: number;
@@ -47,4 +51,4 @@ export type ShapeProps = {
    text?: string;
    valign?: valign;
    halign?: halign;
-}
+};

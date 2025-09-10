@@ -1,104 +1,114 @@
+type UIEventHandler<
+   K extends keyof HTMLElementEventMap = keyof HTMLElementEventMap,
+> = (props: { e: HTMLElementEventMap[K]; ui: UI }) => void;
+
 class UI {
-   parent: HTMLElement;
-   private listeners: [string, EventListenerOrEventListenerObject][] = [];
+   private listeners: {
+      type: keyof HTMLElementEventMap;
+      handler: UIEventHandler<any>;
+      wrapped: EventListener;
+   }[] = [];
    private updater?: () => void;
+   private children: UI[] = [];
+
+   readonly el: HTMLElement;
 
    constructor(props: {
       styles?: Partial<CSSStyleDeclaration>;
       className?: string;
       attrs?: Record<string, string>;
       html?: string;
-      tag?: string;
+      tag?: keyof HTMLElementTagNameMap;
       updater?: () => void;
    }) {
-      this.parent = document.createElement(props.tag ?? "div");
+      this.el = document.createElement(props.tag ?? "div");
 
-      if (props.styles) {
-         Object.assign(this.parent.style, props.styles);
-      }
-
+      if (props.styles) Object.assign(this.el.style, props.styles);
       if (props.className) {
-         this.parent.className = props.className;
+         this.el.className = props.className;
       }
-
-      if (props.attrs) {
+      if (props.attrs)
          Object.entries(props.attrs).forEach(([k, v]) =>
-            this.parent.setAttribute(k, v),
+            this.el.setAttribute(k, v),
          );
-      }
-
-      if (props.html) {
-         this.parent.innerHTML = props.html;
-      }
-
-      if (props.updater) {
-         this.updater = props.updater;
-      }
+      if (props.html) this.el.innerHTML = props.html;
+      if (props.updater) this.updater = props.updater;
    }
 
+   /** Trigger custom updater */
    update() {
-      if (this.updater) this.updater();
+      this.updater?.();
+      this.children.forEach((c) => c.update());
       return this;
    }
 
+   setText(text: string) {
+      this.el.innerText = text;
+      return this;
+   }
+
+   /** Set/get innerHTML */
    html(content?: string) {
       if (content !== undefined) {
-         this.parent.innerHTML = content;
+         this.el.innerHTML = content;
          return this;
       }
-      return this.parent.innerHTML;
+      return this.el.innerHTML;
    }
 
+   /** Apply CSS styles */
    css(styles: Partial<CSSStyleDeclaration>) {
-      Object.assign(this.parent.style, styles);
+      Object.assign(this.el.style, styles);
       return this;
    }
 
+   /** Add/remove/toggle class */
    class(name: string, state?: boolean) {
       if (state === undefined) {
-         this.parent.classList.toggle(name);
+         this.el.classList.toggle(name);
       } else if (state) {
-         this.parent.classList.add(name);
+         this.el.classList.add(name);
       } else {
-         this.parent.classList.remove(name);
+         this.el.classList.remove(name);
       }
       return this;
    }
 
+   /** Add event listener (auto cleaned on remove) */
    on<K extends keyof HTMLElementEventMap>(
       event: K,
-      handler: (ev: HTMLElementEventMap[K]) => void,
+      handler: UIEventHandler<K>,
    ) {
-      this.parent.addEventListener(event, handler);
-      this.listeners.push([event, handler as any]);
+      const wrapped: EventListener = (e) => {
+         handler({ e: e as HTMLElementEventMap[K], ui: this });
+      };
+      this.el.addEventListener(event, wrapped);
+      this.listeners.push({ type: event, handler, wrapped });
       return this;
    }
 
+   /** Append a child UI */
    append(child: UI) {
-      this.parent.append(child.parent);
+      this.el.append(child.el);
+      this.children.push(child);
       return this;
    }
 
-   setStyle(styles: Partial<CSSStyleDeclaration>) {
-      Object.entries(styles).forEach(([key, value]) => {
-         (this.parent.style as any)[key] = value as string;
-      });
-   }
-
+   /** Remove from DOM & cleanup */
    remove() {
-      // cleanup listeners
-      this.listeners.forEach(([type, handler]) => {
-         this.parent.removeEventListener(type, handler);
-      });
+      // remove children recursively
+      this.children.forEach((c) => c.remove());
+      this.children = [];
 
+      // detach listeners
+      this.listeners.forEach(({ type, wrapped }) => {
+         this.el.removeEventListener(type, wrapped);
+      });
       this.listeners = [];
 
-      this.parent.remove();
+      // remove from DOM
+      this.el.remove();
       return this;
-   }
-
-   get getParent() {
-      return this.parent;
    }
 }
 

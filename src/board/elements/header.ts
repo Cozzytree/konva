@@ -1,37 +1,54 @@
 import type { Box, Point, resizeDirection, ShapeProps } from "../types";
+import UI from "../ui";
 import ShapeObject, { type drawProps } from "./element";
 
 class Header extends ShapeObject {
    constructor(props: ShapeProps) {
       super(props || {});
-      this.element = document.createElement("div");
-      this.element.style.position = "absolute";
-      this.element.style.left = `${this.left}px`;
-      this.element.style.top = `${this.top}px`;
-      this.element.style.width = `${this.width}px`;
-      this.element.style.height = `${this.height}px`;
-      this.element.style.border = `1px solid ${this.stroke}`;
-      this.element.classList.add("element");
+      this.element = new UI({
+         tag: "div",
+         className: "element",
+         styles: {
+            position: "absolute",
+            left: `${this.left}px`,
+            top: `${this.top}px`,
+            width: `${this.width}px`,
+            height: `${this.height}px`,
+            border: `${this.strokeWidth}px solid ${this.stroke}`,
+         },
+      });
    }
 
-   draw(props: drawProps): HTMLElement {
+   draw(props: drawProps) {
       if (this.text) {
-         const t = document.createElement("span");
-         t.innerText = this.text;
-         t.classList.add("element");
-         t.style.textAlign = "center";
+         const content = new UI({
+            tag: "span",
+            styles: {
+               textAlign: "center",
+            },
+            className: "element",
+         }).setText(this.text);
 
-         this.element.append(t);
+         this.element.append(content);
 
          // Defer measurement until layout is ready
          requestAnimationFrame(() => {
-            const minHeight = t.scrollHeight;
+            const minHeight = content.el.scrollHeight;
             this.height = Math.max(minHeight, this.height);
 
-            this.element.style.height = `${this.height}px`;
-            this.element.style.display = "flex";
-            this.element.style.justifyContent = "center";
-            this.element.style.alignItems = "center";
+            let al = "center";
+            if (this.valign == "bottom") {
+               al = "end";
+            } else if (this.valign === "top") {
+               al = "start";
+            }
+
+            this.element.css({
+               height: `${this.height}px`,
+               display: "flex",
+               justifyContent: "center",
+               alignItems: al,
+            });
          });
       }
       return this.Element();

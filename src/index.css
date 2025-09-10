@@ -25,18 +25,22 @@
 
 .page {
    border-radius: 10px;
-   box-shadow: 0px 0px 20px #22222250;
-   border: 1px solid #20202010;
+   box-shadow: 0px 0px 20px #00000000;
+   border: 4px solid #20202010;
    position: relative;
 }
 
 .focused {
-   border: 5px solid #60e0ff;
+   border-color: #60e0ff;
 }
 
 .k-icon {
    width: 25px;
    height: 25px;
+}
+
+.k-title {
+   outline: none;
 }
 
 .k-option {

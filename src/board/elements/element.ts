@@ -10,6 +10,7 @@ import type {
    valign,
 } from "../types";
 import { resizeRect } from "../utils/reactResize";
+import type UI from "../ui";
 
 export type drawProps = {
    isActive?: boolean;
@@ -22,7 +23,9 @@ type EventCallbackProps = {
 type eventCallback = (_: EventCallbackProps) => void;
 
 class ShapeObject implements ShapeProps {
-   declare element: HTMLElement;
+   declare element: UI;
+   fontSize: number;
+   strokeWidth: number;
    padding: number = 6;
    id: string;
    height: number;
@@ -37,11 +40,12 @@ class ShapeObject implements ShapeProps {
    private events: Map<elementEvent, eventCallback[]>;
    _board: Board;
 
-   draw(props?: drawProps): HTMLElement {
+   draw(props?: drawProps): UI {
       return this.Element();
    }
 
    constructor(props: ShapeProps) {
+      this.strokeWidth = props.strokeWidth || 2;
       this.id = uuidv4();
       this.height = props.height || 100;
       this.width = props.width || 100;
@@ -54,6 +58,7 @@ class ShapeObject implements ShapeProps {
       this.valign = props.valign || "center";
       this.events = new Map();
       this._board = props._board;
+      this.fontSize = props.fontSize || 16;
    }
 
    mousedown(e: EventCallbackProps) {
@@ -66,10 +71,6 @@ class ShapeObject implements ShapeProps {
    }
 
    clean() {
-      const child = this.element.children;
-      for (let i = 0; i < child.length; i++) {
-         child.item(i)?.remove();
-      }
       this.element.remove();
    }
 
@@ -80,7 +81,10 @@ class ShapeObject implements ShapeProps {
             s(e);
          });
       }
-      if (this._board.getActiveShape?.ID() === this.ID()) {
+      if (
+         this._board.getActiveShape.shape &&
+         this._board.getActiveShape.shape.ID() === this.ID()
+      ) {
          const r = resizeRect(
             e.e,
             {
@@ -119,7 +123,7 @@ class ShapeObject implements ShapeProps {
       }
    }
 
-   mousedup(e: EventCallbackProps) {
+   mouseup(e: EventCallbackProps) {
       const subs = this.events.get("mouseup");
       if (subs) {
          subs.forEach((s) => {
@@ -142,12 +146,19 @@ class ShapeObject implements ShapeProps {
 
       this.left += dx;
       this.top += dy;
-      this.element.style.left = `${this.left}px`;
-      this.element.style.top = `${this.top}px`;
+      this.element.css({
+         left: `${this.left}px`,
+         top: `${this.top}px`,
+      });
    }
 
-   IsDraggable(_: Point): boolean {
-      return false;
+   IsDraggable(p: Point): boolean {
+      return (
+         p.x > this.left &&
+         p.x < this.left + this.width &&
+         p.y > this.top &&
+         p.y < this.top + this.height
+      );
    }
 
    IsResizable(p: Point): resizeDirection | null {
@@ -274,10 +285,12 @@ class ShapeObject implements ShapeProps {
             }
       }
 
-      this.element.style.left = `${this.left}px`;
-      this.element.style.top = `${this.top}px`;
-      this.element.style.width = `${this.width}px`;
-      this.element.style.height = `${this.height}px`;
+      this.element.css({
+         left: `${this.left}px`,
+         top: `${this.top}px`,
+         width: `${this.width}px`,
+         height: `${this.height}px`,
+      });
    }
 }
 
