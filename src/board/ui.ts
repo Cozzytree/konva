@@ -2,7 +2,7 @@ type UIEventHandler<
    K extends keyof HTMLElementEventMap = keyof HTMLElementEventMap,
 > = (props: { e: HTMLElementEventMap[K]; ui: UI }) => void;
 
-class UI {
+class UI<State = any> {
    private listeners: {
       type: keyof HTMLElementEventMap;
       handler: UIEventHandler<any>;
@@ -10,6 +10,7 @@ class UI {
    }[] = [];
    private updater?: () => void;
    private children: UI[] = [];
+   private state: State;
 
    readonly el: HTMLElement;
 
@@ -19,6 +20,7 @@ class UI {
       attrs?: Record<string, string>;
       html?: string;
       tag?: keyof HTMLElementTagNameMap;
+      initialState?: State;
       updater?: () => void;
    }) {
       this.el = document.createElement(props.tag ?? "div");
@@ -33,6 +35,27 @@ class UI {
          );
       if (props.html) this.el.innerHTML = props.html;
       if (props.updater) this.updater = props.updater;
+
+      this.state = props.initialState as State;
+   }
+
+   /** Get current state */
+   getState(): State {
+      return this.state;
+   }
+
+   /** Replace state (triggers re-render) */
+   setState(newState: State) {
+      this.state = newState;
+      this.update();
+      return this;
+   }
+
+   /** Partial update like React’s setState */
+   patchState(partial: Partial<State>) {
+      this.state = { ...this.state, ...partial };
+      this.update();
+      return this;
    }
 
    /** Trigger custom updater */
@@ -108,6 +131,13 @@ class UI {
 
       // remove from DOM
       this.el.remove();
+      return this;
+   }
+
+   clear() {
+      this.children.forEach((c) => c.remove());
+      this.children = [];
+      this.el.innerHTML = "";
       return this;
    }
 }

@@ -19,7 +19,7 @@ class Header extends ShapeObject {
       });
    }
 
-   draw(props: drawProps) {
+   draw() {
       if (this.text) {
          const content = new UI({
             tag: "span",

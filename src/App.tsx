@@ -4,6 +4,7 @@ import Board from "./board/board";
 function App() {
    const bref = useRef<Board | null>(null);
    const divRef = useRef<HTMLDivElement | null>(null);
+
    useEffect(() => {
       if (!divRef.current) return;
       bref.current = new Board({

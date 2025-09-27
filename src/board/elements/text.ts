@@ -8,7 +8,7 @@ class Text extends ShapeObject {
       this.element = this.initShape();
    }
 
-   draw(_: drawProps): UI {
+   draw(): UI {
       return super.Element();
    }
 
